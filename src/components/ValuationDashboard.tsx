@@ -37,6 +37,18 @@ interface ValuationDashboardProps {
 }
 
 export default function ValuationDashboard({ result, stockData, inputs }: ValuationDashboardProps) {
+  // Guard against undefined result
+  if (!result || !result.dcf || !result.relative || !result.consensus) {
+    return (
+      <div className="min-h-[400px] flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="text-center text-gray-500 dark:text-gray-400">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <p>Loading valuation...</p>
+        </div>
+      </div>
+    );
+  }
+
   const { dcf, relative, consensus } = result;
   const [activeTab, setActiveTab] = useState<'overview' | 'dcf' | 'relative' | 'details'>('overview');
 

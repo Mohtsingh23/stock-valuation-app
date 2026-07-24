@@ -157,63 +157,6 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
     </div>
   );
 
-  if (loading) {
-    return (
-      <>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading {symbol}...</p>
-          </div>
-        </div>
-        {debugInfo}
-      </>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-bold mb-4">Stock Not Found</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
-            Could not load data for {symbol}. Please try another symbol.
-          </p>
-          <StockSearch onSelect={handleStockSelect} initialQuery={symbol} />
-        </div>
-      </div>
-    );
-  }
-
-  const { quote, details, chart } = stockData;
-  const financialData = details?.financialData;
-  const keyStats = details?.defaultKeyStatistics;
-  const summaryDetail = details?.summaryDetail;
-  const profile = details?.summaryProfile;
-
-  // Prepare valuation inputs from live data
-  const defaultInputs: Partial<ValuationInputsType> = {
-    revenue: financialData?.totalRevenue ? financialData.totalRevenue / 1e7 : 0,
-    revenueGrowth: keyStats?.revenueGrowth ? keyStats.revenueGrowth * 100 : 12,
-    ebitdaMargin: financialData?.ebitda && financialData?.totalRevenue
-      ? (financialData.ebitda / financialData.totalRevenue) * 100
-      : 15,
-    taxRate: 25.17,
-    capexToRevenue: 5,
-    workingCapitalToRevenue: 10,
-    wacc: 12,
-    terminalGrowth: 5,
-    sharesOutstanding: keyStats?.sharesOutstanding ? keyStats.sharesOutstanding / 1e7 : 1,
-    netDebt: (keyStats?.totalDebt || 0) - (keyStats?.totalCash || 0),
-    currentPrice: quote.price,
-    peRatio: quote.peRatio,
-    forwardPE: quote.forwardPE,
-    pbRatio: quote.pbRatio,
-    evEbitda: quote.evEbitda,
-    dividendYield: quote.dividendYield ? quote.dividendYield * 100 : 0,
-    dividendGrowth: 10,
-  };
-
   // Auto-fetch valuation when stock data loads
   useEffect(() => {
     console.log('[DEBUG] First useEffect TRIGGERED', { hasStockData: !!stockData, hasValuationData: !!valuationData });
@@ -280,6 +223,64 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
     fetchValuation(completeInputs);
   };
 
+  // Early returns for loading/error states - AFTER all hooks
+  if (loading) {
+    return (
+      <>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading {symbol}...</p>
+          </div>
+        </div>
+        {debugInfo}
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-4xl font-bold mb-4">Stock Not Found</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
+            Could not load data for {symbol}. Please try another symbol.
+          </p>
+          <StockSearch onSelect={handleStockSelect} initialQuery={symbol} />
+        </div>
+      </div>
+    );
+  }
+
+  const { quote, details, chart } = stockData;
+  const financialData = details?.financialData;
+  const keyStats = details?.defaultKeyStatistics;
+  const summaryDetail = details?.summaryDetail;
+  const profile = details?.summaryProfile;
+
+  // Prepare valuation inputs from live data
+  const defaultInputs: Partial<ValuationInputsType> = {
+    revenue: financialData?.totalRevenue ? financialData.totalRevenue / 1e7 : 0,
+    revenueGrowth: keyStats?.revenueGrowth ? keyStats.revenueGrowth * 100 : 12,
+    ebitdaMargin: financialData?.ebitda && financialData?.totalRevenue
+      ? (financialData.ebitda / financialData.totalRevenue) * 100
+      : 15,
+    taxRate: 25.17,
+    capexToRevenue: 5,
+    workingCapitalToRevenue: 10,
+    wacc: 12,
+    terminalGrowth: 5,
+    sharesOutstanding: keyStats?.sharesOutstanding ? keyStats.sharesOutstanding / 1e7 : 1,
+    netDebt: (keyStats?.totalDebt || 0) - (keyStats?.totalCash || 0),
+    currentPrice: quote.price,
+    peRatio: quote.peRatio,
+    forwardPE: quote.forwardPE,
+    pbRatio: quote.pbRatio,
+    evEbitda: quote.evEbitda,
+    dividendYield: quote.dividendYield ? quote.dividendYield * 100 : 0,
+    dividendGrowth: 10,
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -340,6 +341,9 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
             loading={valuationLoading}
             defaultInputs={defaultInputs}
             onCalculate={handleCalculate}
+            result={valuationData?.valuation}
+            stockData={quote}
+            inputs={defaultInputs}
           />
         )}
 
