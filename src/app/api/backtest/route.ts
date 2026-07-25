@@ -50,14 +50,17 @@ export async function POST(request: NextRequest) {
       if (chart.quotes && chart.quotes.length > 0) {
         bars = chart.quotes
           .filter((q: any) => q.close != null && q.volume != null)
-          .map((q: any) => ({
-            timestamp: q.date * 1000,
-            open: q.open,
-            high: q.high,
-            low: q.low,
-            close: q.close,
-            volume: q.volume,
-          }));
+          .map((q: any) => {
+            const timestamp = q.date instanceof Date ? q.date.getTime() : typeof q.date === 'number' ? q.date * 1000 : Date.parse(q.date);
+            return {
+              timestamp,
+              open: q.open,
+              high: q.high,
+              low: q.low,
+              close: q.close,
+              volume: q.volume,
+            };
+          });
       }
     } catch (apiError) {
       console.warn('Yahoo Finance API failed, using dummy data:', apiError);
@@ -85,6 +88,9 @@ export async function POST(request: NextRequest) {
 
     const result = runBacktest(config);
 
+    // Avoid duplicate 'params' key (result also contains params)
+    const { params: _, ...resultWithoutParams } = result;
+
     return NextResponse.json({
       success: true,
       symbol,
@@ -95,7 +101,7 @@ export async function POST(request: NextRequest) {
         from: bars[0].timestamp,
         to: bars[bars.length - 1].timestamp,
       },
-      ...result,
+      ...resultWithoutParams,
     });
   } catch (error) {
     console.error('Backtest error:', error);

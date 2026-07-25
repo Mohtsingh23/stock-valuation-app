@@ -18,6 +18,21 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
   // Use initialSymbol from props, or fallback to search params
   const effectiveSymbol = initialSymbol || searchParams?.get('symbol') || 'RELIANCE.NS';
 
+  // Default valuation inputs (used for auto-fetch)
+  const FALLBACK_INPUTS: ValuationInputsType = {
+    revenue: 100000,
+    revenueGrowth: 12,
+    ebitdaMargin: 15,
+    taxRate: 25,
+    capexToRevenue: 5,
+    workingCapitalToRevenue: 10,
+    wacc: 12,
+    terminalGrowth: 5,
+    sharesOutstanding: 1000,
+    netDebt: 5000,
+    currentPrice: 1000,
+  };
+
   const [symbol, setSymbol] = useState(effectiveSymbol);
   const [stockData, setStockData] = useState<any>(null);
   const [valuationData, setValuationData] = useState<any>(null);
@@ -162,7 +177,7 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
     console.log('[DEBUG] First useEffect TRIGGERED', { hasStockData: !!stockData, hasValuationData: !!valuationData });
     if (stockData && !valuationData && Object.keys(inputs).length === 0) {
       console.log('[DEBUG] Auto-fetching valuation with default inputs');
-      fetchValuation({ ...defaultInputs });
+      fetchValuation({ ...FALLBACK_INPUTS });
     }
   }, [stockData]);
 
@@ -171,7 +186,7 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
     console.log('[DEBUG] Second useEffect TRIGGERED', { hasStockData: !!stockData, hasCurrentPrice: !!inputs.currentPrice, inputsKeys: Object.keys(inputs) });
     if (stockData && inputs.currentPrice) {
       console.log('[DEBUG] Fetching valuation with current inputs');
-      fetchValuation(inputs);
+      fetchValuation({ ...FALLBACK_INPUTS, ...inputs } as ValuationInputsType);
     }
   }, [inputs]);
 
@@ -259,7 +274,7 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
   const profile = details?.summaryProfile;
 
   // Prepare valuation inputs from live data
-  const defaultInputs: Partial<ValuationInputsType> = {
+  const liveInputs: Partial<ValuationInputsType> = {
     revenue: financialData?.totalRevenue ? financialData.totalRevenue / 1e7 : 0,
     revenueGrowth: keyStats?.revenueGrowth ? keyStats.revenueGrowth * 100 : 12,
     ebitdaMargin: financialData?.ebitda && financialData?.totalRevenue
@@ -333,30 +348,22 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
         </div>
 
         {activeView === 'valuation' && (
-          <ValuationDashboard
-            symbol={symbol}
-            quote={quote}
-            valuation={valuationData}
-            chart={chart}
-            loading={valuationLoading}
-            defaultInputs={defaultInputs}
-            onCalculate={handleCalculate}
-            result={valuationData?.valuation}
-            stockData={quote}
-            inputs={defaultInputs}
-          />
-        )}
+                  <ValuationDashboard
+                    result={valuationData}
+                    stockData={stockData}
+                    inputs={inputs}
+                  />
+                )}
 
         {activeView === 'inputs' && (
           <ValuationInputs
             initialInputs={inputs}
-            defaultInputs={defaultInputs}
             onCalculate={handleCalculate}
           />
         )}
 
         {activeView === 'backtest' && (
-          <BacktestTab symbol={symbol} defaultParams={defaultInputs} />
+          <BacktestTab symbol={symbol} defaultParams={FALLBACK_INPUTS} />
         )}
 
         {activeView === 'paper-trading' && (

@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { builtInStrategies } from '@/lib/backtest';
 
+import type { ValuationInputs as ValuationInputsType } from '@/lib/valuation';
+
 interface BacktestResult {
   equityCurve: { timestamp: number; equity: number }[];
   trades: {
@@ -45,7 +47,7 @@ interface BacktestResult {
 
 interface BacktestTabProps {
   symbol: string;
-  defaultParams?: Record<string, number>;
+  defaultParams?: ValuationInputsType;
 }
 
 export default function BacktestTab({ symbol, defaultParams }: BacktestTabProps) {

@@ -38,8 +38,9 @@ async function fetchLatestBar(symbol: string): Promise<{ timestamp: number; open
       for (let i = chart.quotes.length - 1; i >= 0; i--) {
         const q = chart.quotes[i];
         if (q.close != null && q.date != null) {
+          const timestamp = q.date instanceof Date ? q.date.getTime() : typeof q.date === 'number' ? q.date * 1000 : Date.parse(q.date);
           return {
-            timestamp: q.date * 1000,
+            timestamp,
             open: q.open ?? q.close,
             high: q.high ?? q.close,
             low: q.low ?? q.close,
@@ -66,14 +67,17 @@ async function fetchRecentBars(symbol: string, days: number = 100): Promise<any[
     if (chart.quotes && chart.quotes.length > 0) {
       return chart.quotes
         .filter((q: any) => q.close != null)
-        .map((q: any) => ({
-          timestamp: q.date * 1000,
-          open: q.open,
-          high: q.high,
-          low: q.low,
-          close: q.close,
-          volume: q.volume || 0,
-        }));
+        .map((q: any) => {
+          const timestamp = q.date instanceof Date ? q.date.getTime() : typeof q.date === 'number' ? q.date * 1000 : Date.parse(q.date);
+          return {
+            timestamp,
+            open: q.open,
+            high: q.high,
+            low: q.low,
+            close: q.close,
+            volume: q.volume || 0,
+          };
+        });
     }
   } catch (error) {
     console.error('Error fetching recent bars:', error);
