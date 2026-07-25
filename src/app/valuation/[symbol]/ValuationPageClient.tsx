@@ -142,50 +142,19 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
 
     loadStockData();
     // Cleanup does nothing - the version check handles stale effects
-    return () => { 
-      console.log('[DEBUG] Cleanup for effectId:', thisEffectId);
-    };
+    return () => { };
   }, [symbol]);
-
-  // Debug panel to show state
-  const debugInfo = (
-    <div style={{ 
-      position: 'fixed', bottom: 10, right: 10, 
-      background: 'rgba(0,0,0,0.8)', color: 'white', 
-      padding: 10, borderRadius: 5, fontSize: 12, 
-      zIndex: 9999, fontFamily: 'monospace', maxWidth: 400 
-    }}>
-      <div><strong>Debug State:</strong></div>
-      <div>effectId: {effectIdRef.current}</div>
-      <div>hasStockData: {String(!!stockData)}</div>
-      <div>hasValuationData: {String(!!valuationData)}</div>
-      <div>loading: {String(loading)}</div>
-      <div>valuationLoading: {String(valuationLoading)}</div>
-      <div>activeView: {activeView}</div>
-      <div>hasCurrentPrice: {String(!!inputs.currentPrice)}</div>
-      <div>inputsKeys: {Object.keys(inputs).join(', ')}</div>
-      <div>stockData keys: {stockData ? Object.keys(stockData).join(', ') : 'null'}</div>
-      <div>valuationData keys: {valuationData ? Object.keys(valuationData).join(', ') : 'null'}</div>
-      {valuationData && valuationData.valuation && (
-        <div>valuation.consensus: {JSON.stringify(valuationData.valuation.consensus)}</div>
-      )}
-    </div>
-  );
 
   // Auto-fetch valuation when stock data loads
   useEffect(() => {
-    console.log('[DEBUG] First useEffect TRIGGERED', { hasStockData: !!stockData, hasValuationData: !!valuationData });
     if (stockData && !valuationData && Object.keys(inputs).length === 0) {
-      console.log('[DEBUG] Auto-fetching valuation with default inputs');
       fetchValuation({ ...FALLBACK_INPUTS });
     }
   }, [stockData]);
 
   // Fetch valuation when inputs change
   useEffect(() => {
-    console.log('[DEBUG] Second useEffect TRIGGERED', { hasStockData: !!stockData, hasCurrentPrice: !!inputs.currentPrice, inputsKeys: Object.keys(inputs) });
     if (stockData && inputs.currentPrice) {
-      console.log('[DEBUG] Fetching valuation with current inputs');
       fetchValuation({ ...FALLBACK_INPUTS, ...inputs } as ValuationInputsType);
     }
   }, [inputs]);
@@ -248,8 +217,7 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
             <p className="text-gray-600 dark:text-gray-400">Loading {symbol}...</p>
           </div>
         </div>
-        {debugInfo}
-      </>
+      </> 
     );
   }
 
