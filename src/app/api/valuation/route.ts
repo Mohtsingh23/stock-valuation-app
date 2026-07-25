@@ -146,28 +146,30 @@ export async function GET(request: NextRequest) {
     const summaryDetail = summary.summaryDetail;
     const profile = summary.summaryProfile;
 
-    // Extract financial data for DCF
+    // Extract financial data for DCF - use multiple fallbacks
     const revenue = financialData?.totalRevenue || keyStats?.totalRevenue || 0;
     const ebitda = financialData?.ebitda || 0;
     const ebitdaMargin = revenue > 0 ? (ebitda / revenue) * 100 : 15; // Default 15% if not available
     const netIncome = financialData?.netIncomeToCommon || 0;
     const sharesOutstanding = keyStats?.sharesOutstanding || quote.sharesOutstanding || 1;
-    const netDebt = (keyStats?.totalDebt || 0) - (keyStats?.totalCash || 0);
+    const totalDebt = keyStats?.totalDebt || financialData?.totalDebt || 0;
+    const totalCash = keyStats?.totalCash || financialData?.totalCash || 0;
+    const netDebt = totalDebt - totalCash;
     const currentPrice = quote.regularMarketPrice || 0;
     const peRatio = quote.trailingPE || summaryDetail?.trailingPE;
     const forwardPE = quote.forwardPE || summaryDetail?.forwardPE;
     const pbRatio = keyStats?.priceToBook || summaryDetail?.priceToBook;
     const evEbitda = keyStats?.enterpriseToEbitda || summaryDetail?.enterpriseToEbitda;
     const dividendYield = quote.dividendYield || summaryDetail?.dividendYield;
-    const beta = quote.beta || 1;
+    const beta = quote.beta || keyStats?.beta || 1;
+    const revenueGrowthRaw = keyStats?.revenueGrowth || financialData?.revenueGrowth;
+    const revenueGrowth = revenueGrowthRaw ? revenueGrowthRaw * 100 : 12; // Default 12% for Indian growth companies
 
     // Calculate WACC for Indian market context
     const riskFreeRate = 7.0; // 10-year Indian govt bond ~7%
     const marketRiskPremium = 7.5; // India equity risk premium ~7.5%
     const wacc = riskFreeRate + beta * marketRiskPremium;
 
-    // Default assumptions for Indian market
-    const revenueGrowth = keyStats?.revenueGrowth ? keyStats.revenueGrowth * 100 : 12; // Default 12% for Indian growth companies
     const taxRate = 25.17; // Indian corporate tax rate ~25.17%
     const capexToRevenue = 5; // Typical capex/revenue for Indian companies
     const workingCapitalToRevenue = 10; // Typical working capital/revenue

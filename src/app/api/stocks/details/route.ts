@@ -73,9 +73,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       financialData: summary.financialData,
-      keyStats: summary.defaultKeyStatistics,
+      defaultKeyStatistics: summary.defaultKeyStatistics,
       summaryDetail: summary.summaryDetail,
-      profile: summary.summaryProfile,
+      summaryProfile: summary.summaryProfile,
       incomeStatement: summary.incomeStatementHistory,
       balanceSheet: summary.balanceSheetHistory,
       cashFlow: summary.cashflowStatementHistory,
@@ -86,9 +86,9 @@ export async function GET(request: NextRequest) {
     const dummy = getDummyDetails(symbol.toUpperCase());
     return NextResponse.json({
       financialData: dummy.financialData,
-      keyStats: dummy.defaultKeyStatistics,
+      defaultKeyStatistics: dummy.defaultKeyStatistics,
       summaryDetail: dummy.summaryDetail,
-      profile: dummy.summaryProfile,
+      summaryProfile: dummy.summaryProfile,
       incomeStatement: dummy.incomeStatement,
       balanceSheet: dummy.balanceSheet,
       cashFlow: dummy.cashFlow,

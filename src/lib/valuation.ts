@@ -442,6 +442,9 @@ export function getSectorDefaults(sector: string): Partial<ValuationInputs> {
  * Format numbers for Indian numbering system (lakhs, crores)
  */
 export function formatIndianNumber(num: number): string {
+  if (num === undefined || num === null || isNaN(num)) {
+    return '₹0';
+  }
   if (num >= 1e7) {
     return `₹${(num / 1e7).toFixed(2)} Cr`;
   } else if (num >= 1e5) {
@@ -452,9 +455,15 @@ export function formatIndianNumber(num: number): string {
 }
 
 export function formatPercent(num: number): string {
+  if (num === undefined || num === null || isNaN(num)) {
+    return '0.00%';
+  }
   return `${num >= 0 ? '+' : ''}${num.toFixed(2)}%`;
 }
 
 export function formatPrice(num: number): string {
+  if (num === undefined || num === null || isNaN(num)) {
+    return '₹0.00';
+  }
   return `₹${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
