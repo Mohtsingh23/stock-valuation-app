@@ -227,11 +227,10 @@ export async function GET(request: NextRequest) {
         riskFreeRate,
         marketRiskPremium,
       },
-      valuation: {
-        dcf,
-        relative,
-        consensus,
-      },
+      // Flatten valuation data for frontend compatibility
+      dcf,
+      relative,
+      consensus,
       profile: {
         sector: profile?.sector,
         industry: profile?.industry,
