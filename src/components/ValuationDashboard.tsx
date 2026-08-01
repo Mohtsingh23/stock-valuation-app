@@ -37,7 +37,7 @@ interface ValuationDashboardProps {
   inputs: any;
 }
 
-export default function ValuationDashboard({ result, stockData, inputs }: ValuationDashboardProps) {
+export default function ValuationDashboard({ result, stockData, details, inputs }: ValuationDashboardProps) {
   // Guard against undefined result
   if (!result || !result.dcf || !result.relative || !result.consensus) {
     return (
