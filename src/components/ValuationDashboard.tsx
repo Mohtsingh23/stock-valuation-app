@@ -16,6 +16,7 @@ import {
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { ValuationResult, formatIndianNumber, formatPercent, formatPrice } from '@/lib/valuation';
+import { ResponsiveTable, MobileMetricCard } from '@/components/ui/MobileComponents';
 
 ChartJS.register(
   CategoryScale,
@@ -156,29 +157,33 @@ export default function ValuationDashboard({ result, stockData, details, inputs 
           </div>
 
           {/* Key Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <MetricCard
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <MobileMetricCard
               label="Current Price"
               value={formatPrice(stockData.price || inputs.currentPrice)}
-              subtitle="Market Price"
+              subValue="Market Price"
+              color="blue"
             />
-            <MetricCard
+            <MobileMetricCard
               label="DCF Fair Value"
               value={formatPrice(dcf.fairValuePerShare)}
-              subtitle={formatPercent(dcf.upside)}
-              subtitleColor={dcf.upside >= 0 ? 'text-green-600' : 'text-red-600'}
+              subValue={formatPercent(dcf.upside)}
+              color={dcf.upside >= 0 ? 'green' : 'red'}
+              trend={dcf.upside >= 0 ? 'up' : 'down'}
             />
-            <MetricCard
+            <MobileMetricCard
               label="Relative Fair Value"
               value={formatPrice(relative.averageFairValue)}
-              subtitle={formatPercent(relative.upside)}
-              subtitleColor={relative.upside >= 0 ? 'text-green-600' : 'text-red-600'}
+              subValue={formatPercent(relative.upside)}
+              color={relative.upside >= 0 ? 'green' : 'red'}
+              trend={relative.upside >= 0 ? 'up' : 'down'}
             />
-            <MetricCard
+            <MobileMetricCard
               label="Consensus Fair Value"
               value={formatPrice(consensus.fairValue)}
-              subtitle={formatPercent(consensus.upside)}
-              subtitleColor={consensus.upside >= 0 ? 'text-green-600' : 'text-red-600'}
+              subValue={formatPercent(consensus.upside)}
+              color={consensus.upside >= 0 ? 'green' : 'red'}
+              trend={consensus.upside >= 0 ? 'up' : 'down'}
             />
           </div>
 
@@ -320,78 +325,40 @@ export default function ValuationDashboard({ result, stockData, details, inputs 
         <div className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Relative Valuation Methods</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Method</th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Fair Value</th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">vs Current</th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Weight</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {relative.peValuation > 0 && (
-                    <tr className="border-b border-gray-100 dark:border-gray-800">
-                      <td className="py-3 px-4">P/E Ratio</td>
-                      <td className="text-right py-3 px-4 font-medium">{formatPrice(relative.peValuation)}</td>
-                      <td className="text-right py-3 px-4" style={{ color: relative.peValuation > inputs.currentPrice ? 'green' : 'red' }}>
-                        {formatPercent(((relative.peValuation - inputs.currentPrice) / inputs.currentPrice) * 100)}
-                      </td>
-                      <td className="text-right py-3 px-4 text-gray-500 dark:text-gray-400">25%</td>
-                    </tr>
-                  )}
-                  {relative.forwardPEValuation > 0 && (
-                    <tr className="border-b border-gray-100 dark:border-gray-800">
-                      <td className="py-3 px-4">Forward P/E</td>
-                      <td className="text-right py-3 px-4 font-medium">{formatPrice(relative.forwardPEValuation)}</td>
-                      <td className="text-right py-3 px-4" style={{ color: relative.forwardPEValuation > inputs.currentPrice ? 'green' : 'red' }}>
-                        {formatPercent(((relative.forwardPEValuation - inputs.currentPrice) / inputs.currentPrice) * 100)}
-                      </td>
-                      <td className="text-right py-3 px-4 text-gray-500 dark:text-gray-400">20%</td>
-                    </tr>
-                  )}
-                  {relative.pbValuation > 0 && (
-                    <tr className="border-b border-gray-100 dark:border-gray-800">
-                      <td className="py-3 px-4">P/B Ratio</td>
-                      <td className="text-right py-3 px-4 font-medium">{formatPrice(relative.pbValuation)}</td>
-                      <td className="text-right py-3 px-4" style={{ color: relative.pbValuation > inputs.currentPrice ? 'green' : 'red' }}>
-                        {formatPercent(((relative.pbValuation - inputs.currentPrice) / inputs.currentPrice) * 100)}
-                      </td>
-                      <td className="text-right py-3 px-4 text-gray-500 dark:text-gray-400">15%</td>
-                    </tr>
-                  )}
-                  {relative.evEbitdaValuation > 0 && (
-                    <tr className="border-b border-gray-100 dark:border-gray-800">
-                      <td className="py-3 px-4">EV/EBITDA</td>
-                      <td className="text-right py-3 px-4 font-medium">{formatPrice(relative.evEbitdaValuation)}</td>
-                      <td className="text-right py-3 px-4" style={{ color: relative.evEbitdaValuation > inputs.currentPrice ? 'green' : 'red' }}>
-                        {formatPercent(((relative.evEbitdaValuation - inputs.currentPrice) / inputs.currentPrice) * 100)}
-                      </td>
-                      <td className="text-right py-3 px-4 text-gray-500 dark:text-gray-400">25%</td>
-                    </tr>
-                  )}
-                  {relative.dividendDiscountValuation > 0 && (
-                    <tr className="border-b border-gray-100 dark:border-gray-800">
-                      <td className="py-3 px-4">Dividend Discount Model</td>
-                      <td className="text-right py-3 px-4 font-medium">{formatPrice(relative.dividendDiscountValuation)}</td>
-                      <td className="text-right py-3 px-4" style={{ color: relative.dividendDiscountValuation > inputs.currentPrice ? 'green' : 'red' }}>
-                        {formatPercent(((relative.dividendDiscountValuation - inputs.currentPrice) / inputs.currentPrice) * 100)}
-                      </td>
-                      <td className="text-right py-3 px-4 text-gray-500 dark:text-gray-400">15%</td>
-                    </tr>
-                  )}
-                  <tr className="bg-gray-50 dark:bg-gray-700/50 font-bold">
-                    <td className="py-3 px-4">Weighted Average</td>
-                    <td className="text-right py-3 px-4">{formatPrice(relative.averageFairValue)}</td>
-                    <td className="text-right py-3 px-4" style={{ color: relative.upside >= 0 ? 'green' : 'red' }}>
-                      {relative.upside >= 0 ? '+' : ''}{relative.upside.toFixed(1)}%
-                    </td>
-                    <td className="text-right py-3 px-4">100%</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable
+              data={[
+                { method: 'P/E Ratio', fairValue: relative.peValuation, weight: '25%' },
+                { method: 'Forward P/E', fairValue: relative.forwardPEValuation, weight: '20%' },
+                { method: 'P/B Ratio', fairValue: relative.pbValuation, weight: '15%' },
+                { method: 'EV/EBITDA', fairValue: relative.evEbitdaValuation, weight: '25%' },
+                { method: 'DDM', fairValue: relative.dividendDiscountValuation, weight: '15%' },
+              ].filter(m => m.fairValue > 0)}
+              columns={[
+                { key: 'method', header: 'Method' },
+                { 
+                  key: 'fairValue', 
+                  header: 'Fair Value',
+                  render: (row) => formatPrice(row.fairValue),
+                  className: 'text-right font-medium',
+                },
+                { 
+                  key: 'fairValue', 
+                  header: 'vs Current',
+                  render: (row) => {
+                    const pct = ((row.fairValue - inputs.currentPrice) / inputs.currentPrice) * 100;
+                    return (
+                      <span style={{ color: pct >= 0 ? 'green' : 'red' }}>
+                        {pct >= 0 ? '+' : ''}{pct.toFixed(1)}%
+                      </span>
+                    );
+                  },
+                  className: 'text-right',
+                },
+                { key: 'weight', header: 'Weight', className: 'text-right text-gray-500 dark:text-gray-400' },
+              ]}
+              keyExtractor={(row) => row.method}
+              emptyMessage="No relative valuation methods available"
+            />
           </div>
 
           {/* Relative Valuation Chart */}

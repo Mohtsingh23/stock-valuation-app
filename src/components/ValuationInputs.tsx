@@ -3,6 +3,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import type { ValuationInputs } from '@/lib/valuation';
 import { getSectorDefaults, SECTOR_DEFAULTS } from '@/lib/valuation';
+import { TouchNumberInput, TouchSelect } from '@/components/ui/MobileComponents';
 
 interface ValuationInputsProps {
   initialInputs: Partial<ValuationInputs>;
@@ -113,52 +114,64 @@ export default function ValuationInputs({
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Income Statement & Cash Flow</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField
+            <TouchNumberInput
               label="Revenue (₹ Crores)"
               value={inputs.revenue || 0}
               onChange={(v) => handleChange('revenue', v)}
               placeholder="10000"
               help="Annual revenue in crores"
+              min={0}
+              step={100}
             />
-            <InputField
+            <TouchNumberInput
               label="Revenue Growth (% p.a.)"
               value={inputs.revenueGrowth || 0}
               onChange={(v) => handleChange('revenueGrowth', v)}
               placeholder="12"
-              step="0.1"
+              step={0.1}
               help="Expected annual revenue growth"
+              min={-50}
+              max={100}
             />
-            <InputField
+            <TouchNumberInput
               label="EBITDA Margin (%)"
               value={inputs.ebitdaMargin || 0}
               onChange={(v) => handleChange('ebitdaMargin', v)}
               placeholder="18"
-              step="0.1"
+              step={0.1}
               help="EBITDA as % of revenue"
+              min={0}
+              max={100}
             />
-            <InputField
+            <TouchNumberInput
               label="Tax Rate (%)"
               value={inputs.taxRate || 25.17}
               onChange={(v) => handleChange('taxRate', v)}
               placeholder="25.17"
-              step="0.1"
+              step={0.1}
               help="Indian corporate tax rate"
+              min={0}
+              max={50}
             />
-            <InputField
+            <TouchNumberInput
               label="Capex / Revenue (%)"
               value={inputs.capexToRevenue || 0}
               onChange={(v) => handleChange('capexToRevenue', v)}
               placeholder="6"
-              step="0.1"
+              step={0.1}
               help="Capital expenditure as % of revenue"
+              min={0}
+              max={50}
             />
-            <InputField
+            <TouchNumberInput
               label="Working Capital / Revenue (%)"
               value={inputs.workingCapitalToRevenue || 0}
               onChange={(v) => handleChange('workingCapitalToRevenue', v)}
               placeholder="10"
-              step="0.1"
+              step={0.1}
               help="Net working capital as % of revenue"
+              min={0}
+              max={100}
             />
           </div>
         </div>
@@ -169,44 +182,50 @@ export default function ValuationInputs({
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">DCF Assumptions</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField
+            <TouchNumberInput
               label="WACC / Discount Rate (%)"
               value={inputs.wacc || 0}
               onChange={(v) => handleChange('wacc', v)}
               placeholder="12"
-              step="0.1"
+              step={0.1}
               help="Weighted Average Cost of Capital"
+              min={0}
+              max={30}
             />
-            <InputField
+            <TouchNumberInput
               label="Terminal Growth Rate (%)"
               value={inputs.terminalGrowth || 0}
               onChange={(v) => handleChange('terminalGrowth', v)}
               placeholder="4"
-              step="0.1"
+              step={0.1}
               help="Long-term growth (GDP ~5-6% for India)"
+              min={0}
+              max={10}
             />
-            <InputField
+            <TouchNumberInput
               label="Shares Outstanding (Crores)"
               value={inputs.sharesOutstanding || 0}
               onChange={(v) => handleChange('sharesOutstanding', v)}
               placeholder="100"
-              step="0.01"
+              step={0.01}
               help="Diluted shares in crores"
+              min={0}
             />
-            <InputField
+            <TouchNumberInput
               label="Net Debt (₹ Crores)"
               value={inputs.netDebt || 0}
               onChange={(v) => handleChange('netDebt', v)}
               placeholder="0"
               help="Total Debt - Cash (negative = net cash)"
             />
-            <InputField
+            <TouchNumberInput
               label="Current Stock Price (₹)"
               value={inputs.currentPrice || 0}
               onChange={(v) => handleChange('currentPrice', v)}
               placeholder="2500"
-              step="0.01"
+              step={0.01}
               help="Current market price per share"
+              min={0}
             />
           </div>
         </div>
@@ -220,53 +239,60 @@ export default function ValuationInputs({
             Leave blank to skip. These improve relative valuation accuracy.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <InputField
+            <TouchNumberInput
               label="Trailing P/E"
-              value={inputs.peRatio || ''}
+              value={inputs.peRatio || 0}
               onChange={(v) => handleChange('peRatio', v)}
               placeholder="20"
-              step="0.1"
-              type="text"
+              step={0.1}
+              min={0}
+              max={100}
             />
-            <InputField
+            <TouchNumberInput
               label="Forward P/E"
-              value={inputs.forwardPE || ''}
+              value={inputs.forwardPE || 0}
               onChange={(v) => handleChange('forwardPE', v)}
               placeholder="18"
-              step="0.1"
-              type="text"
+              step={0.1}
+              min={0}
+              max={100}
             />
-            <InputField
+            <TouchNumberInput
               label="P/B Ratio"
-              value={inputs.pbRatio || ''}
+              value={inputs.pbRatio || 0}
               onChange={(v) => handleChange('pbRatio', v)}
               placeholder="3"
-              step="0.1"
-              type="text"
+              step={0.1}
+              min={0}
+              max={20}
             />
-            <InputField
+            <TouchNumberInput
               label="EV/EBITDA"
-              value={inputs.evEbitda || ''}
+              value={inputs.evEbitda || 0}
               onChange={(v) => handleChange('evEbitda', v)}
               placeholder="12"
-              step="0.1"
-              type="text"
+              step={0.1}
+              min={0}
+              max={50}
             />
-            <InputField
+            <TouchNumberInput
               label="Dividend Yield (%)"
-              value={inputs.dividendYield || ''}
+              value={inputs.dividendYield || 0}
               onChange={(v) => handleChange('dividendYield', v)}
               placeholder="1.5"
-              step="0.1"
-              type="text"
+              step={0.1}
+              min={0}
+              max={20}
             />
-            <InputField
+            <TouchNumberInput
               label="Dividend Growth (%)"
               value={inputs.dividendGrowth || 10}
               onChange={(v) => handleChange('dividendGrowth', v)}
               placeholder="10"
-              step="0.1"
+              step={0.1}
               help="Expected annual dividend growth"
+              min={0}
+              max={50}
             />
           </div>
         </div>
