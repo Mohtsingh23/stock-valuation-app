@@ -7,6 +7,7 @@ import ValuationDashboard from '@/components/ValuationDashboard';
 import ValuationInputs from '@/components/ValuationInputs';
 import BacktestTab from '@/components/BacktestTab';
 import PaperTradingTab from '@/components/PaperTradingTab';
+import PeerComparison from '@/components/peer-comparison/PeerComparison';
 import type { ValuationInputs as ValuationInputsType } from '@/lib/valuation';
 
 interface ValuationPageClientProps {
@@ -40,7 +41,7 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
   const [loading, setLoading] = useState(true);
   const [valuationLoading, setValuationLoading] = useState(false);
   const [error, setError] = useState('');
-  const [activeView, setActiveView] = useState<'valuation' | 'inputs' | 'backtest' | 'paper-trading'>('valuation');
+  const [activeView, setActiveView] = useState<'valuation' | 'inputs' | 'backtest' | 'paper-trading' | 'peer-comparison'>('valuation');
   
   // Use a ref to track the current effect version
   // In StrictMode, effects run twice. We only want the latest effect's results.
@@ -274,7 +275,7 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
           <StockSearch onSelect={handleStockSelect} initialQuery={symbol} />
         </div>
 
-        <div className="mb-6 flex gap-4">
+        <div className="mb-6 flex gap-4 flex-wrap">
           <button
             onClick={() => setActiveView('valuation')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -315,6 +316,16 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
           >
             Paper Trading
           </button>
+          <button
+            onClick={() => setActiveView('peer-comparison')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeView === 'peer-comparison'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
+            }`}
+          >
+            Peer Comparison
+          </button>
         </div>
 
         {activeView === 'valuation' && (
@@ -339,6 +350,10 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
 
         {activeView === 'paper-trading' && (
           <PaperTradingTab symbol={symbol} />
+        )}
+
+        {activeView === 'peer-comparison' && (
+          <PeerComparison initialSymbols={[symbol]} />
         )}
       </div>
     </div>
