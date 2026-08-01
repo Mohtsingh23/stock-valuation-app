@@ -33,6 +33,7 @@ ChartJS.register(
 interface ValuationDashboardProps {
   result: ValuationResult;
   stockData: any;
+  details: any;
   inputs: any;
 }
 
@@ -211,7 +212,7 @@ export default function ValuationDashboard({ result, stockData, inputs }: Valuat
                 { label: 'Shares Outstanding', value: `${(inputs.sharesOutstanding || 0).toFixed(2)} Cr` },
                 { label: 'Net Debt', value: formatIndianNumber((inputs.netDebt || 0) * 1e7) },
                 { label: 'Current Price', value: formatPrice(inputs.currentPrice || 0) },
-                { label: 'Market Cap', value: formatIndianNumber((stockData.marketCap || inputs.currentPrice * inputs.sharesOutstanding * 1e7)) },
+                { label: 'Market Cap', value: formatIndianNumber(details?.financialData?.marketCap || stockData.marketCap || inputs.currentPrice * inputs.sharesOutstanding * 1e7) },
               ]}
             />
             <AssumptionsCard
@@ -222,7 +223,7 @@ export default function ValuationDashboard({ result, stockData, inputs }: Valuat
                 { label: 'P/B Ratio', value: inputs.pbRatio ? inputs.pbRatio.toFixed(1) + 'x' : 'N/A' },
                 { label: 'EV/EBITDA', value: inputs.evEbitda ? inputs.evEbitda.toFixed(1) + 'x' : 'N/A' },
                 { label: 'Dividend Yield', value: inputs.dividendYield ? formatPercent(inputs.dividendYield) : 'N/A' },
-                { label: 'Beta', value: stockData.beta ? stockData.beta.toFixed(2) : 'N/A' },
+                { label: 'Beta', value: details?.defaultKeyStatistics?.beta ? details.defaultKeyStatistics.beta.toFixed(2) : (stockData.beta ? stockData.beta.toFixed(2) : 'N/A') },
               ]}
             />
           </div>

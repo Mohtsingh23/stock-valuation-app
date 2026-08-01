@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import StockSearch from '@/components/StockSearch';
 import ValuationDashboard from '@/components/ValuationDashboard';
@@ -145,12 +145,43 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
     return () => { };
   }, [symbol]);
 
+  // Prepare valuation inputs from live data (memoized)
+  const liveInputs = useMemo((): Partial<ValuationInputsType> => {
+    if (!stockData) return {};
+    
+    const { quote, details } = stockData;
+    const financialData = details?.financialData;
+    const keyStats = details?.defaultKeyStatistics;
+    
+    return {
+      revenue: financialData?.totalRevenue ? financialData.totalRevenue / 1e7 : 0,
+      revenueGrowth: keyStats?.revenueGrowth ? keyStats.revenueGrowth * 100 : 12,
+      ebitdaMargin: financialData?.ebitda && financialData?.totalRevenue
+        ? (financialData.ebitda / financialData.totalRevenue) * 100
+        : 15,
+      taxRate: 25.17,
+      capexToRevenue: 5,
+      workingCapitalToRevenue: 10,
+      wacc: 12,
+      terminalGrowth: 5,
+      sharesOutstanding: keyStats?.sharesOutstanding ? keyStats.sharesOutstanding / 1e7 : 1,
+      netDebt: (keyStats?.totalDebt || 0) - (keyStats?.totalCash || 0),
+      currentPrice: quote?.price,
+      peRatio: quote?.peRatio,
+      forwardPE: quote?.forwardPE,
+      pbRatio: quote?.pbRatio,
+      evEbitda: quote?.evEbitda,
+      dividendYield: quote?.dividendYield ? quote.dividendYield * 100 : 0,
+      dividendGrowth: 10,
+    };
+  }, [stockData]);
+
   // Auto-fetch valuation when stock data loads
   useEffect(() => {
     if (stockData && !valuationData && Object.keys(inputs).length === 0) {
-      fetchValuation({ ...FALLBACK_INPUTS });
+      fetchValuation({ ...FALLBACK_INPUTS, ...liveInputs } as ValuationInputsType);
     }
-  }, [stockData]);
+  }, [stockData, liveInputs]);
 
   // Fetch valuation when inputs change
   useEffect(() => {
@@ -235,35 +266,6 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
     );
   }
 
-  const { quote, details, chart } = stockData;
-  const financialData = details?.financialData;
-  const keyStats = details?.defaultKeyStatistics;
-  const summaryDetail = details?.summaryDetail;
-  const profile = details?.summaryProfile;
-
-  // Prepare valuation inputs from live data
-  const liveInputs: Partial<ValuationInputsType> = {
-    revenue: financialData?.totalRevenue ? financialData.totalRevenue / 1e7 : 0,
-    revenueGrowth: keyStats?.revenueGrowth ? keyStats.revenueGrowth * 100 : 12,
-    ebitdaMargin: financialData?.ebitda && financialData?.totalRevenue
-      ? (financialData.ebitda / financialData.totalRevenue) * 100
-      : 15,
-    taxRate: 25.17,
-    capexToRevenue: 5,
-    workingCapitalToRevenue: 10,
-    wacc: 12,
-    terminalGrowth: 5,
-    sharesOutstanding: keyStats?.sharesOutstanding ? keyStats.sharesOutstanding / 1e7 : 1,
-    netDebt: (keyStats?.totalDebt || 0) - (keyStats?.totalCash || 0),
-    currentPrice: quote.price,
-    peRatio: quote.peRatio,
-    forwardPE: quote.forwardPE,
-    pbRatio: quote.pbRatio,
-    evEbitda: quote.evEbitda,
-    dividendYield: quote.dividendYield ? quote.dividendYield * 100 : 0,
-    dividendGrowth: 10,
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -318,8 +320,9 @@ export default function ValuationPageClient({ initialSymbol }: ValuationPageClie
         {activeView === 'valuation' && (
                   <ValuationDashboard
                     result={valuationData}
-                    stockData={stockData}
-                    inputs={inputs}
+                    stockData={stockData?.quote}
+                    details={stockData?.details}
+                    inputs={Object.keys(inputs).length > 0 ? inputs : liveInputs}
                   />
                 )}
 

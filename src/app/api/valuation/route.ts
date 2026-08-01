@@ -10,6 +10,7 @@ type ValuationQuote = NumericFields & { symbol?: string; shortName?: string; lon
 type ValuationSummary = {
   financialData?: NumericFields; defaultKeyStatistics?: NumericFields; summaryDetail?: NumericFields;
   summaryProfile?: { sector?: string; industry?: string; website?: string; fullTimeEmployees?: number; longBusinessSummary?: string };
+  incomeStatementHistory?: { incomeStatementHistory?: Array<{ netIncome?: number }> };
 };
 
 // Fallback dummy data for Vercel (Yahoo Finance often blocks cloud IPs)
@@ -145,12 +146,16 @@ export async function GET(request: NextRequest) {
     const keyStats = summary.defaultKeyStatistics;
     const summaryDetail = summary.summaryDetail;
     const profile = summary.summaryProfile;
+    const incomeStatementHistory = summary.incomeStatementHistory;
 
     // Extract financial data for DCF - use multiple fallbacks
     const revenue = financialData?.totalRevenue || keyStats?.totalRevenue || 0;
     const ebitda = financialData?.ebitda || 0;
     const ebitdaMargin = revenue > 0 ? (ebitda / revenue) * 100 : 15; // Default 15% if not available
-    const netIncome = financialData?.netIncomeToCommon || 0;
+    const netIncome = incomeStatementHistory?.incomeStatementHistory?.[0]?.netIncome 
+      || financialData?.netIncomeToCommon 
+      || financialData?.netIncome 
+      || 0;
     const sharesOutstanding = keyStats?.sharesOutstanding || quote.sharesOutstanding || 1;
     const totalDebt = keyStats?.totalDebt || financialData?.totalDebt || 0;
     const totalCash = keyStats?.totalCash || financialData?.totalCash || 0;
@@ -161,6 +166,8 @@ export async function GET(request: NextRequest) {
     const pbRatio = keyStats?.priceToBook || summaryDetail?.priceToBook;
     const evEbitda = keyStats?.enterpriseToEbitda || summaryDetail?.enterpriseToEbitda;
     const dividendYield = quote.dividendYield || summaryDetail?.dividendYield;
+    // quote.dividendYield is already percentage (0.47 = 0.47%), summaryDetail is decimal (0.0047)
+    const dividendYieldPct = quote.dividendYield ? quote.dividendYield : (summaryDetail?.dividendYield ? summaryDetail.dividendYield * 100 : undefined);
     const beta = quote.beta || keyStats?.beta || 1;
     const revenueGrowthRaw = keyStats?.revenueGrowth || financialData?.revenueGrowth;
     const revenueGrowth = revenueGrowthRaw ? revenueGrowthRaw * 100 : 12; // Default 12% for Indian growth companies
@@ -191,7 +198,7 @@ export async function GET(request: NextRequest) {
       forwardPE,
       pbRatio,
       evEbitda,
-      dividendYield: dividendYield ? dividendYield * 100 : undefined,
+      dividendYield: dividendYieldPct,
       dividendGrowth: 10, // Assume 10% dividend growth for Indian companies
     };
 
@@ -217,7 +224,7 @@ export async function GET(request: NextRequest) {
         forwardPE,
         pbRatio,
         evEbitda,
-        dividendYield: dividendYield ? dividendYield * 100 : null,
+        dividendYield: dividendYieldPct ? dividendYieldPct : null,
       },
       assumptions: {
         revenueGrowth,
