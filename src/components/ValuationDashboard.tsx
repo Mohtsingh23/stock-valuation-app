@@ -211,8 +211,13 @@ export default function ValuationDashboard({ result, stockData, details, inputs 
               items={[
                 { label: 'Shares Outstanding', value: `${(inputs.sharesOutstanding || 0).toFixed(2)} Cr` },
                 { label: 'Net Debt', value: formatIndianNumber((inputs.netDebt || 0) * 1e7) },
+                { label: 'Total Debt', value: formatIndianNumber(details?.defaultKeyStatistics?.totalDebt || 0) },
+                { label: 'Total Cash', value: formatIndianNumber(details?.defaultKeyStatistics?.totalCash || 0) },
                 { label: 'Current Price', value: formatPrice(inputs.currentPrice || 0) },
                 { label: 'Market Cap', value: formatIndianNumber(details?.financialData?.marketCap || stockData.marketCap || inputs.currentPrice * inputs.sharesOutstanding * 1e7) },
+                { label: 'Enterprise Value', value: formatIndianNumber(details?.defaultKeyStatistics?.enterpriseValue || 0) },
+                { label: 'Book Value / Share', value: details?.defaultKeyStatistics?.bookValue ? formatPrice(details.defaultKeyStatistics.bookValue) : 'N/A' },
+                { label: 'Face Value', value: '₹10 (typical for NSE)' },
               ]}
             />
             <AssumptionsCard
