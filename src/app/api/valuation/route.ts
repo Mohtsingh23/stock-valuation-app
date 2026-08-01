@@ -5,7 +5,7 @@ import { calculateDCF, calculateRelativeValuation, calculateConsensus, Valuation
 // Initialize the Yahoo Finance client
 const yahooFinance = new YahooFinance();
 
-type NumericFields = Record<string, number | undefined>;
+type NumericFields = Record<string, number | string | undefined>;
 type ValuationQuote = NumericFields & { symbol?: string; shortName?: string; longName?: string; currency?: string };
 type ValuationSummary = {
   financialData?: NumericFields; defaultKeyStatistics?: NumericFields; summaryDetail?: NumericFields;
@@ -15,8 +15,8 @@ type ValuationSummary = {
 
 // Fallback dummy data for Vercel (Yahoo Finance often blocks cloud IPs)
 function getDummyValuation(symbol: string) {
-  const basePrice = symbol.includes('RELIANCE') ? 1278 : 
-                    symbol.includes('TCS') ? 3500 : 
+  const basePrice = symbol.includes('RELIANCE') ? 1278 :
+                    symbol.includes('TCS') ? 3500 :
                     symbol.includes('INFY') ? 1500 : 2000;
   const revenue = basePrice * 10000000; // ~10L crores
   const ebitda = basePrice * 1500000;
@@ -52,12 +52,14 @@ function getDummyValuation(symbol: string) {
   const beta = 1.1;
   const riskFreeRate = 7.0;
   const marketRiskPremium = 7.5;
-  const wacc = riskFreeRate + beta * marketRiskPremium;
+  const adjustedBeta = Math.max(beta, 0.8);
+  const wacc = riskFreeRate + adjustedBeta * marketRiskPremium;
+  const terminalGrowth = Math.min(5, wacc - 1);
+  const maxRevenueGrowth = Math.max(wacc - 1, 5);
   const revenueGrowth = 12;
   const taxRate = 25.17;
   const capexToRevenue = 5;
   const workingCapitalToRevenue = 10;
-  const terminalGrowth = 5;
 
   const valuationInputs: ValuationInputs = {
     revenue: revenue / 1e7, // convert to crores
@@ -149,38 +151,80 @@ export async function GET(request: NextRequest) {
     const incomeStatementHistory = summary.incomeStatementHistory;
 
     // Extract financial data for DCF - use multiple fallbacks
-    const revenue = financialData?.totalRevenue || keyStats?.totalRevenue || 0;
-    const ebitda = financialData?.ebitda || 0;
-    const ebitdaMargin = revenue > 0 ? (ebitda / revenue) * 100 : 15; // Default 15% if not available
-    const netIncome = incomeStatementHistory?.incomeStatementHistory?.[0]?.netIncome 
-      || financialData?.netIncomeToCommon 
-      || financialData?.netIncome 
-      || 0;
-    const sharesOutstanding = keyStats?.sharesOutstanding || quote.sharesOutstanding || 1;
-    const totalDebt = keyStats?.totalDebt || financialData?.totalDebt || 0;
-    const totalCash = keyStats?.totalCash || financialData?.totalCash || 0;
+    let revenue = (financialData?.totalRevenue || keyStats?.totalRevenue || 0) as number;
+    let ebitda = (financialData?.ebitda || 0) as number;
+    let netIncome = (incomeStatementHistory?.incomeStatementHistory?.[0]?.netIncome
+      || financialData?.netIncomeToCommon
+      || financialData?.netIncome
+      || 0) as number;
+    let totalDebt = (keyStats?.totalDebt || financialData?.totalDebt || 0) as number;
+    let totalCash = (keyStats?.totalCash || financialData?.totalCash || 0) as number;
+    const sharesOutstanding = (keyStats?.sharesOutstanding || quote.sharesOutstanding || 1) as number;
+    
+    // Handle currency mismatch: Yahoo sometimes returns financials in USD for Indian stocks
+    // If financialCurrency is USD but quote currency is INR, convert using ~83 INR/USD
+    const financialCurrency = financialData?.financialCurrency;
+    const quoteCurrency = quote.currency;
+    if (financialCurrency === 'USD' && quoteCurrency === 'INR') {
+      const usdToInr = 83; // Approximate exchange rate
+      revenue = revenue * usdToInr;
+      ebitda = ebitda * usdToInr;
+      netIncome = netIncome * usdToInr;
+      totalDebt = totalDebt * usdToInr;
+      totalCash = totalCash * usdToInr;
+    }
+    
+    // Sector-specific adjustments
+    const sector = profile?.sector || '';
+    const isBank = sector === 'Financial Services' || sector === 'Banking';
+    
+    // For banks, use operating income (net interest income) instead of EBITDA
+    // Operating margin * revenue ≈ Net Interest Income
+    if (isBank && ebitda === 0 && financialData?.operatingMargins) {
+      ebitda = revenue * (financialData.operatingMargins as number);
+    }
+    
+    // If still no EBITDA, use a reasonable default based on net income margin
+    if (ebitda === 0 && netIncome > 0) {
+      ebitda = netIncome * 1.5; // Rough proxy
+    }
+    
+    // If still no EBITDA, use default margin
+    if (ebitda === 0) {
+      ebitda = revenue * 0.25; // Default 25% EBITDA margin
+    }
+    
     const netDebt = totalDebt - totalCash;
-    const currentPrice = quote.regularMarketPrice || 0;
-    const peRatio = quote.trailingPE || summaryDetail?.trailingPE;
-    const forwardPE = quote.forwardPE || summaryDetail?.forwardPE;
-    const pbRatio = keyStats?.priceToBook || summaryDetail?.priceToBook;
-    const evEbitda = keyStats?.enterpriseToEbitda || summaryDetail?.enterpriseToEbitda;
+    const currentPrice = (quote.regularMarketPrice || 0) as number;
+    const peRatio = (quote.trailingPE || summaryDetail?.trailingPE) as number | undefined;
+    const forwardPE = (quote.forwardPE || summaryDetail?.forwardPE) as number | undefined;
+    const pbRatio = (keyStats?.priceToBook || summaryDetail?.priceToBook) as number | undefined;
+    const evEbitda = (keyStats?.enterpriseToEbitda || summaryDetail?.enterpriseToEbitda) as number | undefined;
     const dividendYield = quote.dividendYield || summaryDetail?.dividendYield;
     // quote.dividendYield is already percentage (0.47 = 0.47%), summaryDetail is decimal (0.0047)
-    const dividendYieldPct = quote.dividendYield ? quote.dividendYield : (summaryDetail?.dividendYield ? summaryDetail.dividendYield * 100 : undefined);
-    const beta = quote.beta || keyStats?.beta || 1;
-    const revenueGrowthRaw = keyStats?.revenueGrowth || financialData?.revenueGrowth;
-    const revenueGrowth = revenueGrowthRaw ? revenueGrowthRaw * 100 : 12; // Default 12% for Indian growth companies
+    const dividendYieldPct = quote.dividendYield ? (quote.dividendYield as number) : (summaryDetail?.dividendYield ? (summaryDetail.dividendYield as number) * 100 : undefined);
+    
+    const ebitdaMargin = revenue > 0 ? (ebitda / revenue) * 100 : 15; // Default 15% if not available
+    const beta = (quote.beta || keyStats?.beta || 1) as number;
+    const revenueGrowthRaw = (keyStats?.revenueGrowth || financialData?.revenueGrowth) as number;
 
     // Calculate WACC for Indian market context
     const riskFreeRate = 7.0; // 10-year Indian govt bond ~7%
     const marketRiskPremium = 7.5; // India equity risk premium ~7.5%
-    const wacc = riskFreeRate + beta * marketRiskPremium;
+    // Use max(beta, 0.8) to prevent unrealistically low WACC for low-beta stocks
+    const adjustedBeta = Math.max(beta, 0.8);
+    const wacc = riskFreeRate + adjustedBeta * marketRiskPremium;
+
+    // Ensure WACC > terminal growth for Gordon Growth Model validity
+    const terminalGrowth = Math.min(5, wacc - 1); // Terminal growth must be < WACC
+
+    // Cap revenue growth at WACC - 1% to ensure DCF convergence
+    const maxRevenueGrowth = Math.max(wacc - 1, 5); // At least 5%
+    const revenueGrowth = revenueGrowthRaw ? Math.min(revenueGrowthRaw * 100, maxRevenueGrowth, 20) : 12; // Default 12%, max 20% and < WACC
 
     const taxRate = 25.17; // Indian corporate tax rate ~25.17%
     const capexToRevenue = 5; // Typical capex/revenue for Indian companies
     const workingCapitalToRevenue = 10; // Typical working capital/revenue
-    const terminalGrowth = 5; // Long-term GDP growth for India
 
     const valuationInputs: ValuationInputs = {
       revenue: revenue / 1e7, // convert to crores
